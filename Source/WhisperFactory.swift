@@ -10,7 +10,7 @@ let whisperFactory: WhisperFactory = WhisperFactory()
 class WhisperFactory: NSObject {
 
   struct AnimationTiming {
-    static let movement: TimeInterval = 0.3
+    static let movement: TimeInterval = 0.0
     static let switcher: TimeInterval = 0.1
     static let popUp: TimeInterval = 1.5
     static let loaderDuration: TimeInterval = 0.7
@@ -35,7 +35,7 @@ class WhisperFactory: NSObject {
     NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
   }
 
-  func craft(_ message: Message, navigationController: UINavigationController, action: WhisperAction) {
+    func craft(_ message: Message, navigationController: UINavigationController, action: WhisperAction) {
     self.navigationController = navigationController
     self.navigationController?.delegate = self
     presentTimer.invalidate()
