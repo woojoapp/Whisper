@@ -52,16 +52,16 @@ class WhisperFactory: NSObject {
         if !containsWhisper {
             whisperView = WhisperView(height: navigationController.navigationBar.frame.height, message: message)
             whisperView.frame.size.height = 0
-            var maximumY = navigationController.navigationBar.frame.height
+            let maximumY = navigationController.navigationBar.frame.height
             
             whisperView.transformViews.forEach {
                 $0.frame.origin.y = -10
                 $0.alpha = 0
             }
             
-            for subview in navigationController.navigationBar.subviews {
-                if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
-            }
+            /*for subview in navigationController.navigationBar.subviews {
+             if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
+             }*/
             
             whisperView.frame.origin.y = maximumY
             navigationController.navigationBar.addSubview(whisperView)
@@ -219,11 +219,11 @@ class WhisperFactory: NSObject {
         navigationController.navigationBar.addSubview(whisperView)
         whisperView.frame.size.height = 0
         
-        var maximumY = navigationController.navigationBar.frame.height
+        let maximumY = navigationController.navigationBar.frame.height
         
-        for subview in navigationController.navigationBar.subviews {
-            if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
-        }
+        /*for subview in navigationController.navigationBar.subviews {
+         if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
+         }*/
         
         whisperView.frame.origin.y = maximumY
         
@@ -280,10 +280,10 @@ class WhisperFactory: NSObject {
         for subview in navigationController.navigationBar.subviews {
             guard let whisper = subview as? WhisperView else { continue }
             
-            var maximumY = navigationController.navigationBar.frame.height
-            for subview in navigationController.navigationBar.subviews where subview != whisper {
-                if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
-            }
+            let maximumY = navigationController.navigationBar.frame.height
+            /*for subview in navigationController.navigationBar.subviews where subview != whisper {
+             if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
+             }*/
             
             whisper.frame = CGRect(
                 x: whisper.frame.origin.x,
@@ -300,14 +300,14 @@ class WhisperFactory: NSObject {
 extension WhisperFactory: UINavigationControllerDelegate {
     
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
-        var maximumY = navigationController.navigationBar.frame.maxY - UIApplication.shared.statusBarFrame.height
+        let maximumY = navigationController.navigationBar.frame.maxY - UIApplication.shared.statusBarFrame.height
         
         for subview in navigationController.navigationBar.subviews {
             if subview is WhisperView { navigationController.navigationBar.bringSubview(toFront: subview) }
             
-            if subview.frame.maxY > maximumY && !(subview is WhisperView) {
-                maximumY = subview.frame.maxY
-            }
+            /*if subview.frame.maxY > maximumY && !(subview is WhisperView) {
+             maximumY = subview.frame.maxY
+             }*/
         }
         
         whisperView.frame.origin.y = maximumY
