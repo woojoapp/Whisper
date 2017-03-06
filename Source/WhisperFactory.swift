@@ -35,7 +35,7 @@ class WhisperFactory: NSObject {
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIDeviceOrientationDidChange, object: nil)
     }
     
-    func craft(_ message: Message, navigationController: UINavigationController, action: WhisperAction, animate: Bool = true) {
+    func craft(_ message: Message, navigationController: UINavigationController, action: WhisperAction, animate: Bool = true, completion: (() -> Void)? = nil) {
         self.navigationController = navigationController
         self.navigationController?.delegate = self
         presentTimer.invalidate()
@@ -52,7 +52,7 @@ class WhisperFactory: NSObject {
         if !containsWhisper {
             whisperView = WhisperView(height: navigationController.navigationBar.frame.height, message: message)
             whisperView.frame.size.height = 0
-            let maximumY = navigationController.navigationBar.frame.height
+            var maximumY = navigationController.navigationBar.frame.height
             
             whisperView.transformViews.forEach {
                 $0.frame.origin.y = -10
@@ -67,19 +67,21 @@ class WhisperFactory: NSObject {
             navigationController.navigationBar.addSubview(whisperView)
         }
         
+        print("CRAFTING", self.navigationController, action)
+        
         if containsWhisper {
-            changeView(message, action: action, animate: animate)
+            changeView(message, action: action, animate: animate, completion: completion)
         } else {
             switch action {
             case .present:
-                presentView(animate: animate)
+                presentView(animate: animate, completion: completion)
             case .show:
                 showView()
             }
         }
     }
     
-    func silentWhisper(_ controller: UINavigationController, after: TimeInterval, animate: Bool = true) {
+    func silentWhisper(_ controller: UINavigationController, after: TimeInterval, animate: Bool = true, completion: (() -> Void)? = nil) {
         self.navigationController = controller
         guard let navigationController = self.navigationController else { return }
         
@@ -97,8 +99,9 @@ class WhisperFactory: NSObject {
         
         whisperView = whisperSubview
         delayTimer.invalidate()
+        var array = ["animate": animate, "completion": completion] as [String : Any]
         delayTimer = Timer.scheduledTimer(timeInterval: after, target: self,
-                                          selector: #selector(WhisperFactory.delayFired(_:)), userInfo: animate, repeats: false)
+                                          selector: #selector(WhisperFactory.delayFired(_:)), userInfo: array, repeats: false)
     }
     
     // MARK: - Presentation
@@ -116,12 +119,15 @@ class WhisperFactory: NSObject {
         }
     }
     
-    func presentView(animate: Bool = true) {
+    func presentView(animate: Bool = true, completion: (() -> Void)? = nil) {
         moveControllerViews(true)
         
+        print("CALLED PRESENTVIEW", animate, completion)
         if animate {
             UIView.animate(withDuration: AnimationTiming.movement, animations: {
                 self.doShowView()
+            }, completion: { _ in
+                completion?()
             })
         } else {
             self.doShowView()
@@ -149,7 +155,8 @@ class WhisperFactory: NSObject {
         })
     }
     
-    func changeView(_ message: Message, action: WhisperAction, animate: Bool = true) {
+    func changeView(_ message: Message, action: WhisperAction, animate: Bool = true, completion: (() -> Void)? = nil) {
+        print("CALLED CHANGEVIEW", animate, completion)
         presentTimer.invalidate()
         delayTimer.invalidate()
         hideView(animate: animate)
@@ -159,7 +166,7 @@ class WhisperFactory: NSObject {
         let backgroundColor = message.backgroundColor
         let action = action.rawValue
         
-        var array = ["title": title, "textColor" : textColor, "backgroundColor": backgroundColor, "action": action, "animate": animate] as [String : Any]
+        var array = ["title": title, "textColor" : textColor, "backgroundColor": backgroundColor, "action": action, "animate": animate, "completion": completion] as [String : Any]
         if let images = message.images { array["images"] = images }
         
         presentTimer = Timer.scheduledTimer(timeInterval: (animate) ? AnimationTiming.movement * 1.1 : 0.0, target: self,
@@ -174,7 +181,7 @@ class WhisperFactory: NSObject {
         }
     }
     
-    func hideView(animate: Bool = true) {
+    func hideView(animate: Bool = true, completion: (() -> Void)? = nil) {
         moveControllerViews(false)
         
         if animate {
@@ -182,6 +189,7 @@ class WhisperFactory: NSObject {
                 self.doHideView()
             }, completion: { _ in
                 self.whisperView.removeFromSuperview()
+                completion?()
             })
         } else {
             doHideView()
@@ -192,11 +200,12 @@ class WhisperFactory: NSObject {
     // MARK: - Timer methods
     
     func delayFired(_ timer: Timer) {
-        if let animate = timer.userInfo as? Bool {
-            hideView(animate: animate)
-        } else {
-            hideView(animate: true)
-        }
+        guard let userInfo = timer.userInfo as? [String : AnyObject] else { return }
+        //if let animate =  {
+        hideView(animate: userInfo["animate"] as? Bool ?? true, completion: userInfo["completion"] as? (() -> Void))
+        /*} else {
+         hideView(animate: true, completion: timer.userInfo["completion"] as? (() -> Void))
+         }*/
     }
     
     func presentFired(_ timer: Timer) {
@@ -219,7 +228,7 @@ class WhisperFactory: NSObject {
         navigationController.navigationBar.addSubview(whisperView)
         whisperView.frame.size.height = 0
         
-        let maximumY = navigationController.navigationBar.frame.height
+        var maximumY = navigationController.navigationBar.frame.height
         
         /*for subview in navigationController.navigationBar.subviews {
          if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
@@ -227,12 +236,13 @@ class WhisperFactory: NSObject {
         
         whisperView.frame.origin.y = maximumY
         
-        action == .present ? presentView(animate: animate) : showView()
+        action == .present ? presentView(animate: animate, completion: userInfo["completion"] as? (() -> Void)) : showView()
     }
     
     // MARK: - Animations
     
     func moveControllerViews(_ down: Bool) {
+        print("Config.modifyInset", Config.modifyInset)
         guard let navigationController = self.navigationController,
             let visibleController = navigationController.visibleViewController
             , Config.modifyInset
@@ -280,7 +290,7 @@ class WhisperFactory: NSObject {
         for subview in navigationController.navigationBar.subviews {
             guard let whisper = subview as? WhisperView else { continue }
             
-            let maximumY = navigationController.navigationBar.frame.height
+            var maximumY = navigationController.navigationBar.frame.height
             /*for subview in navigationController.navigationBar.subviews where subview != whisper {
              if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
              }*/
@@ -300,7 +310,7 @@ class WhisperFactory: NSObject {
 extension WhisperFactory: UINavigationControllerDelegate {
     
     func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
-        let maximumY = navigationController.navigationBar.frame.maxY - UIApplication.shared.statusBarFrame.height
+        var maximumY = navigationController.navigationBar.frame.maxY - UIApplication.shared.statusBarFrame.height
         
         for subview in navigationController.navigationBar.subviews {
             if subview is WhisperView { navigationController.navigationBar.bringSubview(toFront: subview) }
