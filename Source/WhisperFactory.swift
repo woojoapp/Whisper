@@ -67,7 +67,7 @@ class WhisperFactory: NSObject {
             navigationController.navigationBar.addSubview(whisperView)
         }
         
-        print("CRAFTING", self.navigationController, action)
+        print("CRAFTING", self.navigationController?.topViewController?.navigationItem.title, action, message.title)
         
         if containsWhisper {
             changeView(message, action: action, animate: animate, completion: completion)
@@ -97,6 +97,8 @@ class WhisperFactory: NSObject {
             return
         }
         
+        print("SILENTING", self.navigationController?.navigationItem.title)
+        
         whisperView = whisperSubview
         delayTimer.invalidate()
         var array = ["animate": animate, "completion": completion] as [String : Any]
@@ -122,7 +124,7 @@ class WhisperFactory: NSObject {
     func presentView(animate: Bool = true, completion: (() -> Void)? = nil) {
         moveControllerViews(true)
         
-        print("CALLED PRESENTVIEW", animate, completion)
+        print("CALLED PRESENTVIEW", animate, completion, self.whisperView)
         if animate {
             UIView.animate(withDuration: AnimationTiming.movement, animations: {
                 self.doShowView()
@@ -201,11 +203,7 @@ class WhisperFactory: NSObject {
     
     func delayFired(_ timer: Timer) {
         guard let userInfo = timer.userInfo as? [String : AnyObject] else { return }
-        //if let animate =  {
         hideView(animate: userInfo["animate"] as? Bool ?? true, completion: userInfo["completion"] as? (() -> Void))
-        /*} else {
-         hideView(animate: true, completion: timer.userInfo["completion"] as? (() -> Void))
-         }*/
     }
     
     func presentFired(_ timer: Timer) {
@@ -246,7 +244,9 @@ class WhisperFactory: NSObject {
         guard let navigationController = self.navigationController,
             let visibleController = navigationController.visibleViewController
             , Config.modifyInset
-            else { return }
+            else {
+                print("NOT MOVING")
+                return }
         
         let stackCount = navigationController.viewControllers.count
         
@@ -298,7 +298,7 @@ class WhisperFactory: NSObject {
             whisper.frame = CGRect(
                 x: whisper.frame.origin.x,
                 y: maximumY,
-                width: UIScreen.main.bounds.width,
+                width: UIScreen.main.bounds.width / 3.0,
                 height: whisper.frame.size.height)
             whisper.setupFrames()
         }
